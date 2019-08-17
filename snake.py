@@ -122,6 +122,8 @@ SPEEDS = {'EASY': 80,
 # Set the constant FPS limit for the game. Smoothness depend on this.
 GAME_FPS = 100
 
+# Joystick
+JOYSTICK_THRESHOLD = 0.01
 
 class GlobalVariables:
     """Global variables to be used while drawing and moving the snake game.
@@ -358,6 +360,12 @@ class Game:
     def create_window(self):
         """Create a pygame display with board_size * block_size dimension."""
         pygame.init()
+
+        """ Use first joystick available"""
+        joystick = pygame.joystick.Joystick(0)
+        joystick.init()
+        self.joystick = joystick
+
         flags = pygame.DOUBLEBUF | pygame.HWSURFACE
         self.window = pygame.display.set_mode((VAR.canvas_size,
                                                VAR.canvas_size),
@@ -530,6 +538,7 @@ class Game:
             page = 1
 
             if opt == OPTIONS['QUIT']:
+                self.joystick.quit()
                 pygame.quit()
                 sys.exit()
             elif opt == OPTIONS['PLAY']:
