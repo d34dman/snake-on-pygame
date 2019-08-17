@@ -756,11 +756,12 @@ class Game:
         action: int
             Handle human input to assess the next action.
         """
-        pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN])
-        keys = pygame.key.get_pressed()
+        # pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN, pygame.JOYAXISMOTION, pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP])
         pygame.event.pump()
         action = None
-
+        """Pygame events."""
+        events = pygame.event.get()
+        keys = pygame.key.get_pressed()
         if keys[pygame.K_ESCAPE] or keys[pygame.K_q]:
             LOGGER.info('ACTION: KEY PRESSED: ESCAPE or Q')
             self.over(self.snake.length - 3, self.steps)
@@ -776,6 +777,24 @@ class Game:
         elif keys[pygame.K_DOWN]:
             LOGGER.info('ACTION: KEY PRESSED: DOWN')
             action = ABSOLUTE_ACTIONS['DOWN']
+
+        for event in events:
+            if event.type == pygame.JOYAXISMOTION:
+                if event.dict['axis'] == 0:
+                    if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                        action = ABSOLUTE_ACTIONS['DOWN']
+                    elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                        action = ABSOLUTE_ACTIONS['UP']
+                if event.dict['axis'] == 1:
+                    if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                        action = ABSOLUTE_ACTIONS['LEFT']
+                    elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                        action = ABSOLUTE_ACTIONS['RIGHT']
+                print(event.axis, event.value)
+            elif event.type == pygame.JOYBUTTONDOWN:
+                print(event.dict, event.joy, event.button, 'pressed')
+            elif event.type == pygame.JOYBUTTONUP:
+                print(event.dict, event.joy, event.button, 'released')
 
         return action
 
