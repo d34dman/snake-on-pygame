@@ -148,9 +148,9 @@ class GlobalVariables:
     def __init__(self,
                  board_size = 30,
                  block_size = 20,
-                 head_color = (42, 42, 42),
-                 tail_color = (152, 152, 152),
-                 food_color = (200, 0, 0),
+                 head_color = (0, 150, 219),
+                 tail_color = (0, 197, 142),
+                 food_color = (255, 111, 64),
                  game_speed = 80,
                  benchmark = 1):
         """Initialize all global variables. Updated with argument_handler."""
