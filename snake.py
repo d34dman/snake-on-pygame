@@ -367,10 +367,10 @@ class Game:
         self.joystick = joystick
 
         flags = pygame.DOUBLEBUF | pygame.HWSURFACE
-        # self.window = pygame.display.set_mode((VAR.canvas_size,
-        #                                        VAR.canvas_size),
-        #                                       flags)
-        self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)  
+        self.window = pygame.display.set_mode((VAR.canvas_size,
+                                               VAR.canvas_size),
+                                              flags)
+        # self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)  
         self.window.set_alpha(None)
 
         self.screen_rect = self.window.get_rect()
