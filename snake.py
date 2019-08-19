@@ -146,8 +146,8 @@ class GlobalVariables:
         Ammount of matches to benchmark and possibly go to leaderboards.
     """
     def __init__(self,
-                 board_size = 30,
-                 block_size = 20,
+                 board_size = 42,
+                 block_size = 30,
                  head_color = (0, 150, 219),
                  tail_color = (0, 197, 142),
                  food_color = (255, 111, 64),
@@ -361,10 +361,9 @@ class Game:
         """Create a pygame display with board_size * block_size dimension."""
         pygame.init()
 
-        """ Use first joystick available"""
-        joystick = pygame.joystick.Joystick(0)
-        joystick.init()
-        self.joystick = joystick
+        """ Use first joystick if available"""
+        pygame.joystick.init()
+        self.joystick = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 
         flags = pygame.DOUBLEBUF | pygame.HWSURFACE
         self.window = pygame.display.set_mode((VAR.canvas_size,
@@ -539,7 +538,9 @@ class Game:
             page = 1
 
             if opt == OPTIONS['QUIT']:
-                self.joystick.quit()
+                if self.joysticks is not None:
+                    for jostick in self.joysticks:
+                        joystick.quit()
                 pygame.quit()
                 sys.exit()
             elif opt == OPTIONS['PLAY']:
@@ -794,6 +795,8 @@ class Game:
                 print(event.axis, event.value)
             elif event.type == pygame.JOYBUTTONDOWN:
                 print(event.dict, event.joy, event.button, 'pressed')
+                if event.button == 4:
+                    action = ABSOLUTE_ACTIONS['IDLE']
             elif event.type == pygame.JOYBUTTONUP:
                 print(event.dict, event.joy, event.button, 'released')
 
