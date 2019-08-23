@@ -97,6 +97,9 @@ ABSOLUTE_ACTIONS = {'LEFT': 0,
                     'UP': 2,
                     'DOWN': 3,
                     'IDLE': 4}
+JOYSTICK_SNAKE = 0
+JOYSTICK_FROG = 1
+
 FORBIDDEN_MOVES = [(0, 1), (1, 0), (2, 3), (3, 2)]
 
 # Possible rewards in the game
@@ -361,9 +364,12 @@ class Game:
         """Create a pygame display with board_size * block_size dimension."""
         pygame.init()
 
-        """ Use first joystick if available"""
+        """ Use joysticks if available"""
         pygame.joystick.init()
-        self.joystick = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+        self.joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+        if self.joysticks is not None:
+            for joystick in self.joysticks:
+                joystick.init()
 
         flags = pygame.DOUBLEBUF | pygame.HWSURFACE
         self.window = pygame.display.set_mode((VAR.canvas_size,
@@ -539,7 +545,7 @@ class Game:
 
             if opt == OPTIONS['QUIT']:
                 if self.joysticks is not None:
-                    for jostick in self.joysticks:
+                    for joystick in self.joysticks:
                         joystick.quit()
                 pygame.quit()
                 sys.exit()
@@ -782,24 +788,39 @@ class Game:
 
         for event in events:
             if event.type == pygame.JOYAXISMOTION:
-                if event.dict['axis'] == 0:
-                    if event.dict['value'] < -JOYSTICK_THRESHOLD:
-                        action = ABSOLUTE_ACTIONS['DOWN']
-                    elif event.dict['value'] > JOYSTICK_THRESHOLD:
-                        action = ABSOLUTE_ACTIONS['UP']
-                if event.dict['axis'] == 1:
-                    if event.dict['value'] < -JOYSTICK_THRESHOLD:
-                        action = ABSOLUTE_ACTIONS['LEFT']
-                    elif event.dict['value'] > JOYSTICK_THRESHOLD:
-                        action = ABSOLUTE_ACTIONS['RIGHT']
-                print(event.axis, event.value)
+                if event.joy == JOYSTICK_FROG:
+                    """ If frog is jumping, joystick is disabled as frog can't change its direction in flight.
+                    """
+                    if self.frog_is_jumping:
+                        continue
+                    self.frog_is_jumping = 180
+                    if event.dict['axis'] == 0:
+                        if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['FROG_DOWN']
+                        elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['FROG_UP']
+                    if event.dict['axis'] == 1:
+                        if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['FROG_LEFT']
+                        elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['FROG_RIGHT']                   
+                else:
+                    if event.dict['axis'] == 0:
+                        if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['DOWN']
+                        elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['UP']
+                    if event.dict['axis'] == 1:
+                        if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['LEFT']
+                        elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['RIGHT']
             elif event.type == pygame.JOYBUTTONDOWN:
                 print(event.dict, event.joy, event.button, 'pressed')
                 if event.button == 4:
                     action = ABSOLUTE_ACTIONS['IDLE']
             elif event.type == pygame.JOYBUTTONUP:
                 print(event.dict, event.joy, event.button, 'released')
-
         return action
 
     def state(self):
