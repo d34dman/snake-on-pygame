@@ -945,6 +945,17 @@ class Game:
         elif action == ABSOLUTE_ACTIONS['FROG_DOWN']:
             self.food_pos[1] += 1
 
+        """Saturate logic to keep frog within game.
+        """
+        if self.food_pos[0] < 0:
+            self.food_pos[0] = 0
+        if self.food_pos[1] < 0:
+            self.food_pos[1] = 0
+        if self.food_pos[0] >= VAR.board_size:
+            self.food_pos[0] = VAR.board_size - 1
+        if self.food_pos[1] >= VAR.board_size:
+            self.food_pos[1] = VAR.board_size - 1
+    
     def play(self, action):
         """Move the snake to the direction, eat and check collision."""
         self.scored = False
