@@ -96,7 +96,19 @@ ABSOLUTE_ACTIONS = {'LEFT': 0,
                     'RIGHT': 1,
                     'UP': 2,
                     'DOWN': 3,
-                    'IDLE': 4}
+                    'FROG_LEFT': 10,
+                    'FROG_RIGHT': 11,
+                    'FROG_UP': 12,
+                    'FROG_DOWN': 13,
+                    'JOYSTICK_PLAYER_SNAKE_READY': 100,
+                    'JOYSTICK_PLAYER_FROG_READY': 200,
+                    'IDLE': 999}
+
+JOYSTICK_PLAYER_FROG_IDENTIFIER_BUTTON = 1
+JOYSTICK_PLAYER_SNAKE_IDENTIFIER_BUTTON = 0
+
+FROG_MOVES = [10, 11, 12, 13]
+
 FORBIDDEN_MOVES = [(0, 1), (1, 0), (2, 3), (3, 2)]
 
 # Possible rewards in the game
@@ -124,6 +136,9 @@ GAME_FPS = 100
 
 # Joystick
 JOYSTICK_THRESHOLD = 0.01
+
+# How slow FROG PLayers will be, relative to Snake
+FROG_PLAYER_HANDICAP = 2
 
 class GlobalVariables:
     """Global variables to be used while drawing and moving the snake game.
@@ -205,6 +220,16 @@ class Snake:
         valid = False
 
         if (action, self.previous_action) in FORBIDDEN_MOVES:
+            valid = True
+
+        return valid
+
+    def is_movement_for_frog(self,
+                            action):
+        """Check if the movement is for frog, according to FROG_MOVES."""
+        valid = False
+
+        if action in FROG_MOVES:
             valid = True
 
         return valid
@@ -361,9 +386,13 @@ class Game:
         """Create a pygame display with board_size * block_size dimension."""
         pygame.init()
 
-        """ Use first joystick if available"""
+        """ Use joysticks if available"""
         pygame.joystick.init()
-        self.joystick = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+        self.joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+        if self.joysticks is not None:
+            for joystick in self.joysticks:
+                joystick.init()
+        self.joystick_used_by_frog = None
 
         flags = pygame.DOUBLEBUF | pygame.HWSURFACE
         self.window = pygame.display.set_mode((VAR.canvas_size,
@@ -385,45 +414,42 @@ class Game:
         """Cycle through a given menu, waiting for an option to be clicked."""
         selected = False
         selected_option = None
-
+        """Preselect first option by default.
+        """
+        focused_option = 0
+        elapsed = 0
+        move_wait = 0
+        previous_key = None
+        self.fps.tick(GAME_FPS)
         while not selected:
-            pygame.event.pump()
-            events = pygame.event.get()
-
-            self.window.fill(pygame.Color(225, 225, 225))
-
-            for i, option in enumerate(menu_options):
-                if option is not None:
-                    option.draw()
-                    option.hovered = False
-
-                    if (option.rect.collidepoint(pygame.mouse.get_pos())
-                        and option.block_type != 'text'):
-                        option.hovered = True
-
-                        for event in events:
-                            if event.type == pygame.MOUSEBUTTONUP:
-                                if leaderboards:
-                                    opt = list_menu[i]
-
-                                    if opt == 'MENU':
-                                        return dictionary[opt], None
-                                    else:
-                                        pages = len(opt.rstrip('0123456789'))
-                                        page = int(opt[pages:])
-                                        selected_option = dictionary[opt[:pages]]
-
-                                        return selected_option, page
-                                else:
-                                    selected_option = dictionary[list_menu[i]]
-
-            if selected_option is not None:
-                selected = True
-            if img is not None:
-                self.window.blit(img, img_rect.bottomleft)
-
-            pygame.display.update()
-
+            delta_time = self.fps.get_time()
+            elapsed += delta_time
+            key_input = self.handle_input()
+            if key_input is not None:
+                previous_key = key_input
+            if elapsed > move_wait:
+                elapsed = 0
+                if previous_key in [ABSOLUTE_ACTIONS['UP'], ABSOLUTE_ACTIONS['FROG_UP']]:
+                    focused_option = focused_option - 1
+                elif previous_key in [ABSOLUTE_ACTIONS['DOWN'], ABSOLUTE_ACTIONS['FROG_DOWN']]:
+                    focused_option = focused_option + 1
+                elif previous_key in [ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_SNAKE_READY'], ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_FROG_READY']]:
+                    selected_option = dictionary[list_menu[focused_option]]
+                    selected = True
+                """Saturate logic."""
+                if focused_option < 0:
+                    focused_option = 0
+                if focused_option >= len(menu_options):
+                    focused_option = len(menu_options) - 1        
+                """Draw"""
+                self.window.fill(pygame.Color(225, 225, 225))
+                for i, option in enumerate(menu_options):
+                    if option is not None:
+                        option.draw()
+                        option.hovered = (i == focused_option)
+                        pygame.display.update()
+                previous_key = None
+            self.fps.tick(GAME_FPS) 
         return selected_option
 
     def cycle_matches(self, n_matches, mega_hardcore = False):
@@ -449,52 +475,8 @@ class Game:
             The selected option in the main loop.
         """
         pygame.display.set_caption("SNAKE GAME  | PLAY NOW!")
-
-        img = pygame.image.load(self.logo_path).convert()
-        img = pygame.transform.scale(img, (VAR.canvas_size,
-                                           int(VAR.canvas_size / 3)))
-        img_rect = img.get_rect()
-        img_rect.center = self.screen_rect.center
-        list_menu = ['PLAY', 'BENCHMARK', 'LEADERBOARDS', 'QUIT']
-        menu_options = [TextBlock(text = ' PLAY GAME ',
-                                  pos = (self.screen_rect.centerx,
-                                         4 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 12),
-                                  block_type = "menu"),
-                        TextBlock(text = ' BENCHMARK ',
-                                  pos = (self.screen_rect.centerx,
-                                         6 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 12),
-                                  block_type = "menu"),
-                        TextBlock(text = ' LEADERBOARDS ',
-                                  pos = (self.screen_rect.centerx,
-                                         8 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 12),
-                                  block_type = "menu"),
-                        TextBlock(text = ' QUIT ',
-                                  pos = (self.screen_rect.centerx,
-                                         10 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 12),
-                                  block_type = "menu")]
-        selected_option = self.cycle_menu(menu_options,
-                                          list_menu,
-                                          OPTIONS,
-                                          img,
-                                          img_rect)
-
-        return selected_option
+        # return zero takes you to play game mode directly.
+        return 0
 
     def start_match(self, wait):
         """Create some wait time before the actual drawing of the game."""
@@ -531,36 +513,12 @@ class Game:
         LOGGER.info('EVENT: GAME START')
 
     def start(self):
-        """Use menu to select the option/game mode."""
-        opt = self.menu()
-
         while True:
-            page = 1
-
-            if opt == OPTIONS['QUIT']:
-                if self.joysticks is not None:
-                    for jostick in self.joysticks:
-                        joystick.quit()
-                pygame.quit()
-                sys.exit()
-            elif opt == OPTIONS['PLAY']:
-                VAR.game_speed, mega_hardcore = self.select_speed()
-                score, _ = self.cycle_matches(n_matches = 1,
-                                              mega_hardcore = mega_hardcore)
-                opt = self.over(score, None)
-            elif opt == OPTIONS['BENCHMARK']:
-                VAR.game_speed, mega_hardcore = self.select_speed()
-                score, steps = self.cycle_matches(n_matches = VAR.benchmark,
-                                                  mega_hardcore = mega_hardcore)
-                opt = self.over(score, steps)
-            elif opt == OPTIONS['LEADERBOARDS']:
-                while page is not None:
-                    opt, page = self.view_leaderboards(page)
-            elif opt == OPTIONS['MENU']:
-                opt = self.menu()
-            if opt == OPTIONS['ADD_TO_LEADERBOARDS']:
-                self.add_to_leaderboards(int(np.mean(score)), int(np.mean(steps)))
-                opt, page = self.view_leaderboards()
+            VAR.game_speed, mega_hardcore = self.select_speed()
+            score, _ = self.cycle_matches(n_matches = 1,
+                                                mega_hardcore = mega_hardcore)
+            self.over(score, None)
+            self.menu()
 
     def over(self, score, step):
         """If collision with wall or body, end the game and open options.
@@ -571,58 +529,11 @@ class Game:
             The selected option in the main loop.
         """
         score_option = None
-
-        if len(score) == VAR.benchmark:
-            score_option = TextBlock(text = ' ADD TO LEADERBOARDS ',
-                                     pos = (self.screen_rect.centerx,
-                                            8 * self.screen_rect.centery / 10),
-                                     canvas_size = VAR.canvas_size,
-                                     font_path = self.font_path,
-                                     window = self.window,
-                                     scale = (1 / 15),
-                                     block_type = "menu")
-
         text_score = 'SCORE: ' + str(int(np.mean(score)))
-        list_menu = ['PLAY', 'MENU', 'ADD_TO_LEADERBOARDS', 'QUIT']
-        menu_options = [TextBlock(text = ' PLAY AGAIN ',
-                                  pos = (self.screen_rect.centerx,
-                                         4 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 15),
-                                  block_type = "menu"),
-
-                        TextBlock(text = ' GO TO MENU ',
-                                  pos = (self.screen_rect.centerx,
-                                         6 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 15),
-                                  block_type = "menu"),
-                        score_option,
-                        TextBlock(text = ' QUIT ',
-                                  pos = (self.screen_rect.centerx,
-                                         10 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 15),
-                                  block_type = "menu"),
-                        TextBlock(text = text_score,
-                                  pos = (self.screen_rect.centerx,
-                                         15 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 10),
-                                  block_type = "text")]
         pygame.display.set_caption("SNAKE GAME  | " + text_score
                                    + "  |  GAME OVER...")
         LOGGER.info('EVENT: GAME OVER | FINAL %s', text_score)
-        selected_option = self.cycle_menu(menu_options, list_menu, OPTIONS)
-
+        selected_option = 'PLAY'
         return selected_option
 
     def select_speed(self):
@@ -673,15 +584,37 @@ class Game:
         last_key = self.snake.previous_action
         move_wait = VAR.game_speed
 
-        while not self.game_over:
-            elapsed += self.fps.get_time()  # Get elapsed time since last call.
+        elapsed_frog = 0
+        last_key_frog = None
+        move_wait_frog = move_wait * FROG_PLAYER_HANDICAP
 
+        while not self.game_over:
+            # Get elapsed time since last call.
+            delta_time = self.fps.get_time()
+            elapsed_frog += delta_time
+            elapsed += delta_time
             if mega_hardcore:  # Progressive speed increments, the hardest.
                 move_wait = VAR.game_speed - (2 * (self.snake.length - 3))
 
             key_input = self.handle_input()  # Receive inputs with tick.
             invalid_key = self.snake.is_movement_invalid(key_input)
 
+            """Handle Frog Player interactions.
+            """
+            is_frog_movement_key = self.snake.is_movement_for_frog(key_input)
+            if is_frog_movement_key is True:
+                last_key_frog = key_input
+                """ Reset key_input so that it doesn't trickle down to snake.
+                """
+                key_input = None
+            
+            if elapsed_frog >= move_wait_frog:
+                elapsed_frog = 0
+                self.play_frog(last_key_frog)
+                last_key_frog = None
+
+            """Handle Snake Player interactions.
+            """
             if key_input is not None and not invalid_key:
                 last_key = key_input
 
@@ -779,27 +712,53 @@ class Game:
         elif keys[pygame.K_DOWN]:
             LOGGER.info('ACTION: KEY PRESSED: DOWN')
             action = ABSOLUTE_ACTIONS['DOWN']
+        elif keys[pygame.K_w]:
+            LOGGER.info('ACTION: KEY PRESSED: w')
+            action = ABSOLUTE_ACTIONS['FROG_UP']            
+        elif keys[pygame.K_a]:
+            LOGGER.info('ACTION: KEY PRESSED: a')
+            action = ABSOLUTE_ACTIONS['FROG_LEFT']            
+        elif keys[pygame.K_s]:
+            LOGGER.info('ACTION: KEY PRESSED: s')
+            action = ABSOLUTE_ACTIONS['FROG_DOWN']            
+        elif keys[pygame.K_d]:
+            LOGGER.info('ACTION: KEY PRESSED: d')
+            action = ABSOLUTE_ACTIONS['FROG_RIGHT']
+        
 
         for event in events:
             if event.type == pygame.JOYAXISMOTION:
-                if event.dict['axis'] == 0:
-                    if event.dict['value'] < -JOYSTICK_THRESHOLD:
-                        action = ABSOLUTE_ACTIONS['DOWN']
-                    elif event.dict['value'] > JOYSTICK_THRESHOLD:
-                        action = ABSOLUTE_ACTIONS['UP']
-                if event.dict['axis'] == 1:
-                    if event.dict['value'] < -JOYSTICK_THRESHOLD:
-                        action = ABSOLUTE_ACTIONS['LEFT']
-                    elif event.dict['value'] > JOYSTICK_THRESHOLD:
-                        action = ABSOLUTE_ACTIONS['RIGHT']
-                print(event.axis, event.value)
+                if event.joy == self.joystick_used_by_frog:
+                    self.frog_is_jumping = 180
+                    if event.dict['axis'] == 0:
+                        if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['FROG_DOWN']
+                        elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['FROG_UP']
+                    if event.dict['axis'] == 1:
+                        if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['FROG_LEFT']
+                        elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['FROG_RIGHT']                   
+                else:
+                    if event.dict['axis'] == 0:
+                        if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['DOWN']
+                        elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['UP']
+                    if event.dict['axis'] == 1:
+                        if event.dict['value'] < -JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['LEFT']
+                        elif event.dict['value'] > JOYSTICK_THRESHOLD:
+                            action = ABSOLUTE_ACTIONS['RIGHT']
             elif event.type == pygame.JOYBUTTONDOWN:
                 print(event.dict, event.joy, event.button, 'pressed')
-                if event.button == 4:
-                    action = ABSOLUTE_ACTIONS['IDLE']
-            elif event.type == pygame.JOYBUTTONUP:
-                print(event.dict, event.joy, event.button, 'released')
-
+                if event.button == JOYSTICK_PLAYER_FROG_IDENTIFIER_BUTTON:
+                    action = ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_FROG_READY']
+                    """ Frog enters the game"""
+                    self.joystick_used_by_frog = event.joy
+                elif event.button == JOYSTICK_PLAYER_SNAKE_IDENTIFIER_BUTTON:
+                    action = ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_SNAKE_READY']
         return action
 
     def state(self):
@@ -860,6 +819,29 @@ class Game:
 
         return action
 
+    def play_frog(self, action):
+        """Move the snake to the direction, eat and check collision."""
+        self.food_pos = self.generate_food()
+        if action == ABSOLUTE_ACTIONS['FROG_LEFT']:
+            self.food_pos[0] -= 1
+        elif action == ABSOLUTE_ACTIONS['FROG_RIGHT']:
+            self.food_pos[0] += 1
+        elif action == ABSOLUTE_ACTIONS['FROG_UP']:
+            self.food_pos[1] -= 1
+        elif action == ABSOLUTE_ACTIONS['FROG_DOWN']:
+            self.food_pos[1] += 1
+
+        """Saturate logic to keep frog within game.
+        """
+        if self.food_pos[0] < 0:
+            self.food_pos[0] = 0
+        if self.food_pos[1] < 0:
+            self.food_pos[1] = 0
+        if self.food_pos[0] >= VAR.board_size:
+            self.food_pos[0] = VAR.board_size - 1
+        if self.food_pos[1] >= VAR.board_size:
+            self.food_pos[1] = VAR.board_size - 1
+    
     def play(self, action):
         """Move the snake to the direction, eat and check collision."""
         self.scored = False
