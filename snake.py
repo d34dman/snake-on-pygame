@@ -478,52 +478,8 @@ class Game:
             The selected option in the main loop.
         """
         pygame.display.set_caption("SNAKE GAME  | PLAY NOW!")
-
-        img = pygame.image.load(self.logo_path).convert()
-        img = pygame.transform.scale(img, (VAR.canvas_size,
-                                           int(VAR.canvas_size / 3)))
-        img_rect = img.get_rect()
-        img_rect.center = self.screen_rect.center
-        list_menu = ['PLAY', 'BENCHMARK', 'LEADERBOARDS', 'QUIT']
-        menu_options = [TextBlock(text = ' PLAY GAME ',
-                                  pos = (self.screen_rect.centerx,
-                                         4 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 12),
-                                  block_type = "menu"),
-                        TextBlock(text = ' BENCHMARK ',
-                                  pos = (self.screen_rect.centerx,
-                                         6 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 12),
-                                  block_type = "menu"),
-                        TextBlock(text = ' LEADERBOARDS ',
-                                  pos = (self.screen_rect.centerx,
-                                         8 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 12),
-                                  block_type = "menu"),
-                        TextBlock(text = ' QUIT ',
-                                  pos = (self.screen_rect.centerx,
-                                         10 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 12),
-                                  block_type = "menu")]
-        selected_option = self.cycle_menu(menu_options,
-                                          list_menu,
-                                          OPTIONS,
-                                          img,
-                                          img_rect)
-
-        return selected_option
+        # return zero takes you to play game mode directly.
+        return 0
 
     def start_match(self, wait):
         """Create some wait time before the actual drawing of the game."""
