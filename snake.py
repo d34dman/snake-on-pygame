@@ -909,6 +909,18 @@ class Game:
 
         return action
 
+    def play_frog(self, action):
+        """Move the snake to the direction, eat and check collision."""
+        self.food_pos = self.generate_food()
+        if action == ABSOLUTE_ACTIONS['FROG_LEFT']:
+            self.food_pos[0] -= 1
+        elif action == ABSOLUTE_ACTIONS['FROG_RIGHT']:
+            self.food_pos[0] += 1
+        elif action == ABSOLUTE_ACTIONS['FROG_UP']:
+            self.food_pos[1] -= 1
+        elif action == ABSOLUTE_ACTIONS['FROG_DOWN']:
+            self.food_pos[1] += 1
+
     def play(self, action):
         """Move the snake to the direction, eat and check collision."""
         self.scored = False
