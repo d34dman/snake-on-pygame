@@ -96,9 +96,15 @@ ABSOLUTE_ACTIONS = {'LEFT': 0,
                     'RIGHT': 1,
                     'UP': 2,
                     'DOWN': 3,
-                    'IDLE': 4}
-JOYSTICK_SNAKE = 0
-JOYSTICK_FROG = 1
+                    'FROG_LEFT': 10,
+                    'FROG_RIGHT': 11,
+                    'FROG_UP': 12,
+                    'FROG_DOWN': 13,
+                    'JOYSTICK_PLAYER_SNAKE_READY': 100,
+                    'JOYSTICK_PLAYER_FROG_READY': 200,
+                    'IDLE': 999}
+
+JOYSTICK_PLAYER_FROG_IDENTIFIER_BUTTON = 1
 
 FORBIDDEN_MOVES = [(0, 1), (1, 0), (2, 3), (3, 2)]
 
@@ -370,6 +376,7 @@ class Game:
         if self.joysticks is not None:
             for joystick in self.joysticks:
                 joystick.init()
+        self.joystick_used_by_frog = None
 
         flags = pygame.DOUBLEBUF | pygame.HWSURFACE
         self.window = pygame.display.set_mode((VAR.canvas_size,
@@ -788,11 +795,7 @@ class Game:
 
         for event in events:
             if event.type == pygame.JOYAXISMOTION:
-                if event.joy == JOYSTICK_FROG:
-                    """ If frog is jumping, joystick is disabled as frog can't change its direction in flight.
-                    """
-                    if self.frog_is_jumping:
-                        continue
+                if event.joy == self.joystick_used_by_frog:
                     self.frog_is_jumping = 180
                     if event.dict['axis'] == 0:
                         if event.dict['value'] < -JOYSTICK_THRESHOLD:
@@ -817,10 +820,10 @@ class Game:
                             action = ABSOLUTE_ACTIONS['RIGHT']
             elif event.type == pygame.JOYBUTTONDOWN:
                 print(event.dict, event.joy, event.button, 'pressed')
-                if event.button == 4:
-                    action = ABSOLUTE_ACTIONS['IDLE']
-            elif event.type == pygame.JOYBUTTONUP:
-                print(event.dict, event.joy, event.button, 'released')
+                if event.button == JOYSTICK_PLAYER_FROG_IDENTIFIER_BUTTON:
+                    action = ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_FROG_READY']
+                    """ Frog enters the game"""
+                    self.joystick_used_by_frog = event.joy
         return action
 
     def state(self):
