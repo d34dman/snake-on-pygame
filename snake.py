@@ -107,7 +107,9 @@ ABSOLUTE_ACTIONS = {'LEFT': 0,
 JOYSTICK_PLAYER_FROG_IDENTIFIER_BUTTON = 1
 JOYSTICK_PLAYER_SNAKE_IDENTIFIER_BUTTON = 0
 
-FROG_MOVES = [10, 11, 12, 13]
+# 100, 200 are not FROG moves, its a lie.
+# A lie that helps me save some time refactoring some function names.
+FROG_MOVES = [10, 11, 12, 13, 100, 200]
 
 FORBIDDEN_MOVES = [(0, 1), (1, 0), (2, 3), (3, 2)]
 
