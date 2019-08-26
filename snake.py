@@ -560,36 +560,12 @@ class Game:
         LOGGER.info('EVENT: GAME START')
 
     def start(self):
-        """Use menu to select the option/game mode."""
-        opt = self.menu()
-
         while True:
-            page = 1
-
-            if opt == OPTIONS['QUIT']:
-                if self.joysticks is not None:
-                    for joystick in self.joysticks:
-                        joystick.quit()
-                pygame.quit()
-                sys.exit()
-            elif opt == OPTIONS['PLAY']:
-                VAR.game_speed, mega_hardcore = self.select_speed()
-                score, _ = self.cycle_matches(n_matches = 1,
-                                              mega_hardcore = mega_hardcore)
-                opt = self.over(score, None)
-            elif opt == OPTIONS['BENCHMARK']:
-                VAR.game_speed, mega_hardcore = self.select_speed()
-                score, steps = self.cycle_matches(n_matches = VAR.benchmark,
-                                                  mega_hardcore = mega_hardcore)
-                opt = self.over(score, steps)
-            elif opt == OPTIONS['LEADERBOARDS']:
-                while page is not None:
-                    opt, page = self.view_leaderboards(page)
-            elif opt == OPTIONS['MENU']:
-                opt = self.menu()
-            if opt == OPTIONS['ADD_TO_LEADERBOARDS']:
-                self.add_to_leaderboards(int(np.mean(score)), int(np.mean(steps)))
-                opt, page = self.view_leaderboards()
+            VAR.game_speed, mega_hardcore = self.select_speed()
+            score, _ = self.cycle_matches(n_matches = 1,
+                                                mega_hardcore = mega_hardcore)
+            self.over(score, None)
+            self.menu()
 
     def over(self, score, step):
         """If collision with wall or body, end the game and open options.
@@ -600,58 +576,11 @@ class Game:
             The selected option in the main loop.
         """
         score_option = None
-
-        if len(score) == VAR.benchmark:
-            score_option = TextBlock(text = ' ADD TO LEADERBOARDS ',
-                                     pos = (self.screen_rect.centerx,
-                                            8 * self.screen_rect.centery / 10),
-                                     canvas_size = VAR.canvas_size,
-                                     font_path = self.font_path,
-                                     window = self.window,
-                                     scale = (1 / 15),
-                                     block_type = "menu")
-
         text_score = 'SCORE: ' + str(int(np.mean(score)))
-        list_menu = ['PLAY', 'MENU', 'ADD_TO_LEADERBOARDS', 'QUIT']
-        menu_options = [TextBlock(text = ' PLAY AGAIN ',
-                                  pos = (self.screen_rect.centerx,
-                                         4 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 15),
-                                  block_type = "menu"),
-
-                        TextBlock(text = ' GO TO MENU ',
-                                  pos = (self.screen_rect.centerx,
-                                         6 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 15),
-                                  block_type = "menu"),
-                        score_option,
-                        TextBlock(text = ' QUIT ',
-                                  pos = (self.screen_rect.centerx,
-                                         10 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 15),
-                                  block_type = "menu"),
-                        TextBlock(text = text_score,
-                                  pos = (self.screen_rect.centerx,
-                                         15 * self.screen_rect.centery / 10),
-                                  canvas_size = VAR.canvas_size,
-                                  font_path = self.font_path,
-                                  window = self.window,
-                                  scale = (1 / 10),
-                                  block_type = "text")]
         pygame.display.set_caption("SNAKE GAME  | " + text_score
                                    + "  |  GAME OVER...")
         LOGGER.info('EVENT: GAME OVER | FINAL %s', text_score)
-        selected_option = self.cycle_menu(menu_options, list_menu, OPTIONS)
-
+        selected_option = 'PLAY'
         return selected_option
 
     def select_speed(self):
