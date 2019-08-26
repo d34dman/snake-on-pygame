@@ -706,8 +706,10 @@ class Game:
         move_wait_frog = move_wait * FROG_PLAYER_HANDICAP
 
         while not self.game_over:
-            elapsed_frog += self.fps.get_time()
-            elapsed += self.fps.get_time()  # Get elapsed time since last call.
+            # Get elapsed time since last call.
+            delta_time = self.fps.get_time()
+            elapsed_frog += delta_time
+            elapsed += delta_time  
 
             if mega_hardcore:  # Progressive speed increments, the hardest.
                 move_wait = VAR.game_speed - (2 * (self.snake.length - 3))
