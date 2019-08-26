@@ -792,6 +792,19 @@ class Game:
         elif keys[pygame.K_DOWN]:
             LOGGER.info('ACTION: KEY PRESSED: DOWN')
             action = ABSOLUTE_ACTIONS['DOWN']
+        elif keys[pygame.K_w]:
+            LOGGER.info('ACTION: KEY PRESSED: w')
+            action = ABSOLUTE_ACTIONS['FROG_UP']            
+        elif keys[pygame.K_a]:
+            LOGGER.info('ACTION: KEY PRESSED: a')
+            action = ABSOLUTE_ACTIONS['FROG_LEFT']            
+        elif keys[pygame.K_s]:
+            LOGGER.info('ACTION: KEY PRESSED: s')
+            action = ABSOLUTE_ACTIONS['FROG_DOWN']            
+        elif keys[pygame.K_d]:
+            LOGGER.info('ACTION: KEY PRESSED: d')
+            action = ABSOLUTE_ACTIONS['FROG_RIGHT']
+        
 
         for event in events:
             if event.type == pygame.JOYAXISMOTION:
