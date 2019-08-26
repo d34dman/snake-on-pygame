@@ -106,6 +106,8 @@ ABSOLUTE_ACTIONS = {'LEFT': 0,
 
 JOYSTICK_PLAYER_FROG_IDENTIFIER_BUTTON = 1
 
+FROG_MOVES = [10, 11, 12, 13]
+
 FORBIDDEN_MOVES = [(0, 1), (1, 0), (2, 3), (3, 2)]
 
 # Possible rewards in the game
@@ -214,6 +216,16 @@ class Snake:
         valid = False
 
         if (action, self.previous_action) in FORBIDDEN_MOVES:
+            valid = True
+
+        return valid
+
+    def is_movement_for_frog(self,
+                            action):
+        """Check if the movement is for frog, according to FROG_MOVES."""
+        valid = False
+
+        if action in FROG_MOVES:
             valid = True
 
         return valid
