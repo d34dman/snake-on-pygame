@@ -105,6 +105,7 @@ ABSOLUTE_ACTIONS = {'LEFT': 0,
                     'IDLE': 999}
 
 JOYSTICK_PLAYER_FROG_IDENTIFIER_BUTTON = 1
+JOYSTICK_PLAYER_SNAKE_IDENTIFIER_BUTTON = 0
 
 FROG_MOVES = [10, 11, 12, 13]
 
@@ -709,8 +710,7 @@ class Game:
             # Get elapsed time since last call.
             delta_time = self.fps.get_time()
             elapsed_frog += delta_time
-            elapsed += delta_time  
-
+            elapsed += delta_time
             if mega_hardcore:  # Progressive speed increments, the hardest.
                 move_wait = VAR.game_speed - (2 * (self.snake.length - 3))
 
@@ -875,6 +875,8 @@ class Game:
                     action = ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_FROG_READY']
                     """ Frog enters the game"""
                     self.joystick_used_by_frog = event.joy
+                elif event.button == JOYSTICK_PLAYER_SNAKE_IDENTIFIER_BUTTON:
+                    action = ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_SNAKE_READY']
         return action
 
     def state(self):
