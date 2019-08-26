@@ -414,45 +414,42 @@ class Game:
         """Cycle through a given menu, waiting for an option to be clicked."""
         selected = False
         selected_option = None
-
+        """Preselect first option by default.
+        """
+        focused_option = 0
+        elapsed = 0
+        move_wait = 0
+        previous_key = None
+        self.fps.tick(GAME_FPS)
         while not selected:
-            pygame.event.pump()
-            events = pygame.event.get()
-
-            self.window.fill(pygame.Color(225, 225, 225))
-
-            for i, option in enumerate(menu_options):
-                if option is not None:
-                    option.draw()
-                    option.hovered = False
-
-                    if (option.rect.collidepoint(pygame.mouse.get_pos())
-                        and option.block_type != 'text'):
-                        option.hovered = True
-
-                        for event in events:
-                            if event.type == pygame.MOUSEBUTTONUP:
-                                if leaderboards:
-                                    opt = list_menu[i]
-
-                                    if opt == 'MENU':
-                                        return dictionary[opt], None
-                                    else:
-                                        pages = len(opt.rstrip('0123456789'))
-                                        page = int(opt[pages:])
-                                        selected_option = dictionary[opt[:pages]]
-
-                                        return selected_option, page
-                                else:
-                                    selected_option = dictionary[list_menu[i]]
-
-            if selected_option is not None:
-                selected = True
-            if img is not None:
-                self.window.blit(img, img_rect.bottomleft)
-
-            pygame.display.update()
-
+            delta_time = self.fps.get_time()
+            elapsed += delta_time
+            key_input = self.handle_input()
+            if key_input is not None:
+                previous_key = key_input
+            if elapsed > move_wait:
+                elapsed = 0
+                if previous_key in [ABSOLUTE_ACTIONS['UP'], ABSOLUTE_ACTIONS['FROG_UP']]:
+                    focused_option = focused_option - 1
+                elif previous_key in [ABSOLUTE_ACTIONS['DOWN'], ABSOLUTE_ACTIONS['FROG_DOWN']]:
+                    focused_option = focused_option + 1
+                elif previous_key in [ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_SNAKE_READY'], ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_FROG_READY']]:
+                    selected_option = dictionary[list_menu[focused_option]]
+                    selected = True
+                """Saturate logic."""
+                if focused_option < 0:
+                    focused_option = 0
+                if focused_option >= len(menu_options):
+                    focused_option = len(menu_options) - 1        
+                """Draw"""
+                self.window.fill(pygame.Color(225, 225, 225))
+                for i, option in enumerate(menu_options):
+                    if option is not None:
+                        option.draw()
+                        option.hovered = (i == focused_option)
+                        pygame.display.update()
+                previous_key = None
+            self.fps.tick(GAME_FPS) 
         return selected_option
 
     def cycle_matches(self, n_matches, mega_hardcore = False):
