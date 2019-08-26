@@ -136,6 +136,9 @@ GAME_FPS = 100
 # Joystick
 JOYSTICK_THRESHOLD = 0.01
 
+# How slow FROG PLayers will be, relative to Snake
+FROG_PLAYER_HANDICAP = 2
+
 class GlobalVariables:
     """Global variables to be used while drawing and moving the snake game.
 
@@ -698,7 +701,12 @@ class Game:
         last_key = self.snake.previous_action
         move_wait = VAR.game_speed
 
+        elapsed_frog = 0
+        last_key_frog = None
+        move_wait_frog = move_wait * FROG_PLAYER_HANDICAP
+
         while not self.game_over:
+            elapsed_frog += self.fps.get_time()
             elapsed += self.fps.get_time()  # Get elapsed time since last call.
 
             if mega_hardcore:  # Progressive speed increments, the hardest.
@@ -707,6 +715,22 @@ class Game:
             key_input = self.handle_input()  # Receive inputs with tick.
             invalid_key = self.snake.is_movement_invalid(key_input)
 
+            """Handle Frog Player interactions.
+            """
+            is_frog_movement_key = self.snake.is_movement_for_frog(key_input)
+            if is_frog_movement_key is True:
+                last_key_frog = key_input
+                """ Reset key_input so that it doesn't trickle down to snake.
+                """
+                key_input = None
+            
+            if elapsed_frog >= move_wait_frog:
+                elapsed_frog = 0
+                self.play_frog(last_key_frog)
+                last_key_frog = None
+
+            """Handle Snake Player interactions.
+            """
             if key_input is not None and not invalid_key:
                 last_key = key_input
 
