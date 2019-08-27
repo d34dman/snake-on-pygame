@@ -514,14 +514,16 @@ class Game:
         LOGGER.info('EVENT: GAME START')
 
     def start(self):
-        while True:
+        opt = 'PLAY'
+        while opt != 'QUIT':
             VAR.game_speed, mega_hardcore = self.select_speed()
             score, _ = self.cycle_matches(n_matches = 1,
                                                 mega_hardcore = mega_hardcore)
-            self.over(score, None)
-            self.menu()
+            self.over(score, None, True)
+            # @TODO : Show score message and chance to continue
+            
 
-    def over(self, score, step):
+    def over(self, score, step, continue_play):
         """If collision with wall or body, end the game and open options.
 
         Return
@@ -529,12 +531,16 @@ class Game:
         selected_option: int
             The selected option in the main loop.
         """
-        score_option = None
         text_score = 'SCORE: ' + str(int(np.mean(score)))
         pygame.display.set_caption("SNAKE GAME  | " + text_score
                                    + "  |  GAME OVER...")
         LOGGER.info('EVENT: GAME OVER | FINAL %s', text_score)
-        selected_option = 'PLAY'
+        if continue_play is True:
+            print('continue play is true: Playing again')
+            selected_option = 'PLAY'
+        else:
+            print('continue play is false: Quitting')
+            selected_option = 'QUIT'
         return selected_option
 
     def select_speed(self):
@@ -700,7 +706,7 @@ class Game:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_ESCAPE] or keys[pygame.K_q]:
             LOGGER.info('ACTION: KEY PRESSED: ESCAPE or Q')
-            self.over(self.snake.length - 3, self.steps)
+            self.over(self.snake.length - 3, self.steps, False)
         elif keys[pygame.K_LEFT]:
             LOGGER.info('ACTION: KEY PRESSED: LEFT')
             action = ABSOLUTE_ACTIONS['LEFT']
