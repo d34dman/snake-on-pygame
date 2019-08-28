@@ -425,32 +425,33 @@ class Game:
         while not selected:
             delta_time = self.fps.get_time()
             elapsed += delta_time
-            key_input = self.handle_input()
-            if key_input is not None:
-                previous_key = key_input
-            if elapsed > move_wait:
-                elapsed = 0
-                if previous_key in [ABSOLUTE_ACTIONS['UP'], ABSOLUTE_ACTIONS['FROG_UP']]:
-                    focused_option = focused_option - 1
-                elif previous_key in [ABSOLUTE_ACTIONS['DOWN'], ABSOLUTE_ACTIONS['FROG_DOWN']]:
-                    focused_option = focused_option + 1
-                elif previous_key in [ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_SNAKE_READY'], ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_FROG_READY']]:
-                    selected_option = dictionary[list_menu[focused_option]]
-                    selected = True
-                """Saturate logic."""
-                if focused_option < 0:
-                    focused_option = 0
-                if focused_option >= len(menu_options):
-                    focused_option = len(menu_options) - 1        
-                """Draw"""
-                self.window.fill(pygame.Color(225, 225, 225))
-                for i, option in enumerate(menu_options):
-                    if option is not None:
-                        option.draw()
-                        option.hovered = (i == focused_option)
-                        pygame.display.update()
-                previous_key = None
-            self.fps.tick(GAME_FPS) 
+            key_inputs = self.handle_input()
+            for key_input in key_inputs:
+                if key_input is not None:
+                    previous_key = key_input
+                if elapsed > move_wait:
+                    elapsed = 0
+                    if previous_key in [ABSOLUTE_ACTIONS['UP'], ABSOLUTE_ACTIONS['FROG_UP']]:
+                        focused_option = focused_option - 1
+                    elif previous_key in [ABSOLUTE_ACTIONS['DOWN'], ABSOLUTE_ACTIONS['FROG_DOWN']]:
+                        focused_option = focused_option + 1
+                    elif previous_key in [ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_SNAKE_READY'], ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_FROG_READY']]:
+                        selected_option = dictionary[list_menu[focused_option]]
+                        selected = True
+                    """Saturate logic."""
+                    if focused_option < 0:
+                        focused_option = 0
+                    if focused_option >= len(menu_options):
+                        focused_option = len(menu_options) - 1        
+                    """Draw"""
+                    self.window.fill(pygame.Color(225, 225, 225))
+                    for i, option in enumerate(menu_options):
+                        if option is not None:
+                            option.draw()
+                            option.hovered = (i == focused_option)
+                            pygame.display.update()
+                    previous_key = None
+                self.fps.tick(GAME_FPS) 
         return selected_option
 
     def cycle_matches(self, n_matches, mega_hardcore = False):
@@ -600,29 +601,20 @@ class Game:
             elapsed += delta_time
             if mega_hardcore:  # Progressive speed increments, the hardest.
                 move_wait = VAR.game_speed - (2 * (self.snake.length - 3))
-
-            key_input = self.handle_input()  # Receive inputs with tick.
-            invalid_key = self.snake.is_movement_invalid(key_input)
-
-            """Handle Frog Player interactions.
-            """
-            is_frog_movement_key = self.snake.is_movement_for_frog(key_input)
-            if is_frog_movement_key is True:
-                last_key_frog = key_input
-                """ Reset key_input so that it doesn't trickle down to snake.
+                move_wait_frog = move_wait * FROG_PLAYER_HANDICAP
+            key_inputs = self.handle_input()  # Receive inputs with tick.
+            for key_input in key_inputs:
+                invalid_key = self.snake.is_movement_invalid(key_input)
+                """Handle Frog Player interactions.
                 """
-                key_input = None
-            
+                if self.snake.is_movement_for_frog(key_input) is True:
+                    last_key_frog = key_input
+                elif key_input is not None and not invalid_key:
+                    last_key = key_input
             if elapsed_frog >= move_wait_frog:
                 elapsed_frog = 0
                 self.play_frog(last_key_frog)
                 last_key_frog = None
-
-            """Handle Snake Player interactions.
-            """
-            if key_input is not None and not invalid_key:
-                last_key = key_input
-
             if elapsed >= move_wait:  # Move and redraw
                 elapsed = 0
                 self.play(last_key)
@@ -639,9 +631,7 @@ class Game:
 
             pygame.display.update()
             self.fps.tick(GAME_FPS)  # Limit FPS to 100
-
-        score = current_size - 3  # After the game is over, record score
-
+            score = current_size - 3  # After the game is over, record score
         return score, self.steps
 
     def check_collision(self):
@@ -696,45 +686,33 @@ class Game:
         action: int
             Handle human input to assess the next action.
         """
-        # pygame.event.set_allowed([pygame.QUIT, pygame.KEYDOWN, pygame.JOYAXISMOTION, pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP])
-        pygame.event.pump()
+        actions = []
         action = None
+        map = {
+            pygame.K_LEFT: ABSOLUTE_ACTIONS['LEFT'],
+            pygame.K_RIGHT: ABSOLUTE_ACTIONS['RIGHT'],
+            pygame.K_UP: ABSOLUTE_ACTIONS['UP'],
+            pygame.K_DOWN: ABSOLUTE_ACTIONS['DOWN'],
+            pygame.K_w: ABSOLUTE_ACTIONS['FROG_UP'],
+            pygame.K_a: ABSOLUTE_ACTIONS['FROG_LEFT'],
+            pygame.K_s: ABSOLUTE_ACTIONS['FROG_DOWN'],
+            pygame.K_d: ABSOLUTE_ACTIONS['FROG_RIGHT'],
+        }
         """Pygame events."""
+        pygame.event.pump()
         events = pygame.event.get()
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_ESCAPE] or keys[pygame.K_q]:
-            LOGGER.info('ACTION: KEY PRESSED: ESCAPE or Q')
-            self.over(self.snake.length - 3, self.steps, False)
-        elif keys[pygame.K_LEFT]:
-            LOGGER.info('ACTION: KEY PRESSED: LEFT')
-            action = ABSOLUTE_ACTIONS['LEFT']
-        elif keys[pygame.K_RIGHT]:
-            LOGGER.info('ACTION: KEY PRESSED: RIGHT')
-            action = ABSOLUTE_ACTIONS['RIGHT']
-        elif keys[pygame.K_UP]:
-            LOGGER.info('ACTION: KEY PRESSED: UP')
-            action = ABSOLUTE_ACTIONS['UP']
-        elif keys[pygame.K_DOWN]:
-            LOGGER.info('ACTION: KEY PRESSED: DOWN')
-            action = ABSOLUTE_ACTIONS['DOWN']
-        elif keys[pygame.K_w]:
-            LOGGER.info('ACTION: KEY PRESSED: w')
-            action = ABSOLUTE_ACTIONS['FROG_UP']            
-        elif keys[pygame.K_a]:
-            LOGGER.info('ACTION: KEY PRESSED: a')
-            action = ABSOLUTE_ACTIONS['FROG_LEFT']            
-        elif keys[pygame.K_s]:
-            LOGGER.info('ACTION: KEY PRESSED: s')
-            action = ABSOLUTE_ACTIONS['FROG_DOWN']            
-        elif keys[pygame.K_d]:
-            LOGGER.info('ACTION: KEY PRESSED: d')
-            action = ABSOLUTE_ACTIONS['FROG_RIGHT']
-        
-
         for event in events:
-            if event.type == pygame.JOYAXISMOTION:
+            action = None
+            if event.type == pygame.KEYDOWN:
+                key = event.key
+                if key == pygame.K_ESCAPE or key == pygame.K_q:
+                    LOGGER.info('ACTION: KEY PRESSED: ESCAPE or Q')
+                    self.over(self.snake.length - 3, self.steps, False)
+                elif key in map:
+                    LOGGER.info('ACTION: KEY PRESSED: %s', map[key])
+                    action = map[key]
+            elif event.type == pygame.JOYAXISMOTION:
                 if event.joy == self.joystick_used_by_frog:
-                    self.frog_is_jumping = 180
                     if event.dict['axis'] == 0:
                         if event.dict['value'] < -JOYSTICK_THRESHOLD:
                             action = ABSOLUTE_ACTIONS['FROG_DOWN']
@@ -763,7 +741,10 @@ class Game:
                     self.joystick_used_by_frog = event.joy
                 elif event.button == JOYSTICK_PLAYER_SNAKE_IDENTIFIER_BUTTON:
                     action = ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_SNAKE_READY']
-        return action
+            
+            if action:
+                actions.append(action)
+        return actions
 
     def state(self):
         """Create a matrix of the current state of the game.
