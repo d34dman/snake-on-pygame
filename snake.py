@@ -742,7 +742,7 @@ class Game:
                 elif event.button == JOYSTICK_PLAYER_SNAKE_IDENTIFIER_BUTTON:
                     action = ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_SNAKE_READY']
             
-            if action:
+            if action is not None:
                 actions.append(action)
         return actions
 
