@@ -461,7 +461,7 @@ class Game:
 
         for _ in range(n_matches):
             self.reset()
-            self.start_match(wait = 3)
+            # self.start_match(wait = 3)
             current_score, current_step = self.single_player(mega_hardcore)
             score.append(current_score)
             step.append(current_step)
