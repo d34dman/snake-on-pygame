@@ -708,6 +708,7 @@ class Game:
                 if key == pygame.K_ESCAPE or key == pygame.K_q:
                     LOGGER.info('ACTION: KEY PRESSED: ESCAPE or Q')
                     self.over(self.snake.length - 3, self.steps, False)
+                    exit(0)
                 elif key in map:
                     LOGGER.info('ACTION: KEY PRESSED: %s', map[key])
                     action = map[key]
