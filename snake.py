@@ -536,10 +536,8 @@ class Game:
                                    + "  |  GAME OVER...")
         LOGGER.info('EVENT: GAME OVER | FINAL %s', text_score)
         if continue_play is True:
-            print('continue play is true: Playing again')
             selected_option = 'PLAY'
         else:
-            print('continue play is false: Quitting')
             selected_option = 'QUIT'
         return selected_option
 
@@ -759,7 +757,6 @@ class Game:
                         elif event.dict['value'] > JOYSTICK_THRESHOLD:
                             action = ABSOLUTE_ACTIONS['RIGHT']
             elif event.type == pygame.JOYBUTTONDOWN:
-                print(event.dict, event.joy, event.button, 'pressed')
                 if event.button == JOYSTICK_PLAYER_FROG_IDENTIFIER_BUTTON:
                     action = ABSOLUTE_ACTIONS['JOYSTICK_PLAYER_FROG_READY']
                     """ Frog enters the game"""
@@ -1147,6 +1144,7 @@ class Game:
 
 VAR = GlobalVariables() # Initializing GlobalVariables
 LOGGER = logging.getLogger(__name__) # Setting logger
+LOGGER.setLevel(100)
 environ['SDL_VIDEO_CENTERED'] = '1' # Centering the window
 
 if __name__ == '__main__':
