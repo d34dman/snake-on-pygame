@@ -127,7 +127,7 @@ POINT_TYPE = {'EMPTY': 0,
 
 # Speed levels possible to human players. MEGA HARDCORE starts with MEDIUM and
 # increases with snake size
-LEVELS = [" EASY ", " MEDIUM ", " HARD ", " MEGA HARDCORE "]
+LEVELS = [" SLOW ", " MEDIUM ", " FAST ", " ? "]
 SPEEDS = {'EASY': 80,
           'MEDIUM': 60,
           'HARD': 40,
